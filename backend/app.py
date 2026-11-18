@@ -5,7 +5,7 @@ import os
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from db_models import db, bcrypt
+from models.db_models import db, bcrypt
 
 
 def create_app():
