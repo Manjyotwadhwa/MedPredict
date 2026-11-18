@@ -1,7 +1,9 @@
 """
 backend/app.py  — with PostgreSQL + SQLite fallback + JWT auth
 """
-import os
+import os, sys
+# Ensure backend/ is on the path so all submodules resolve correctly
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
