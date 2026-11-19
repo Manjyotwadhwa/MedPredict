@@ -1,23 +1,28 @@
-import os, sys
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+from flask import Blueprint, request, jsonify
+import sys, os
 
-from flask import Flask, send_from_directory
-from flask_cors import CORS
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-def create_app():
-    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    FRONTEND_DIR = os.path.join(BASE_DIR, '..', 'frontend')
-    app = Flask(__name__, static_folder=os.path.abspath(FRONTEND_DIR), static_url_path='')
-    CORS(app, resources={r'/api/*': {'origins': '*'}})
-    from routes.predict_routes import predict_bp
-    from routes.info_routes import info_bp
-    app.register_blueprint(predict_bp)
-    app.register_blueprint(info_bp)
-    @app.route('/')
-    def index():
-        return send_from_directory(app.static_folder, 'index.html')
-    return app
+from services.predictor import Predictor
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    create_app().run(host='0.0.0.0', port=port, debug=False)
+predict_bp = Blueprint('predict', __name__)
+predictor  = Predictor()
+
+
+@predict_bp.route('/api/predict', methods=['POST'])
+def predict():
+    data = request.get_json(force=True)
+
+    disease = data.get('disease', '').strip().lower()
+    if not disease:
+        return jsonify({'error': 'disease field is required'}), 400
+
+    feature_dict = {k: v for k, v in data.items() if k != 'disease'}
+
+    try:
+        result = predictor.predict(disease, feature_dict)
+        return jsonify(result), 200
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': 'Prediction failed', 'details': str(e)}), 500
